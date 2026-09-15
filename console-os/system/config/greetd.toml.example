@@ -1,0 +1,13 @@
+# EXEMPLE, pas installé automatiquement. Préfixe CMake /usr/local supposé.
+# Créer d'abord le compte Linux non privilégié console, sans sudo ni SSH.
+# Garder une console de récupération indépendante. Voir docs/bringup.md.
+[terminal]
+vt = 1
+
+[initial_session]
+command = "/usr/local/bin/console-graphical-session"
+user = "console"
+
+[default_session]
+command = "agreety --cmd /usr/local/bin/console-graphical-session"
+user = "greeter"

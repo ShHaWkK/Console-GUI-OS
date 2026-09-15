@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "org.consoleos.hello",
+  "name": "Hello Console",
+  "version": "0.1.0",
+  "developer": "Console OS Project",
+  "executable": "hello-console",
+  "runtime": "native",
+  "permissions": [],
+  "controller_support": false
+}

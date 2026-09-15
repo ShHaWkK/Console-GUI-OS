@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ $(id -u) == 0 ]]; then
+  echo 'console-session: utiliser un compte non root' >&2
+  exit 1
+fi
+bindir=${CONSOLE_BIN_DIR:-$(cd -- "$(dirname -- "$0")" && pwd)}
+catalog=${CONSOLE_CATALOG:-$(realpath -- "$bindir/../share/console-os/games")}
+[[ -x "$bindir/game-manager" && -x "$bindir/console-shell" ]] || { echo 'Binaires absents' >&2; exit 1; }
+[[ -n ${DBUS_SESSION_BUS_ADDRESS:-} ]] || { echo 'Session D-Bus absente : utiliser dbus-run-session' >&2; exit 1; }
+manager_pid=''
+shell_pid=''
+cleanup() {
+  trap - EXIT INT TERM
+  [[ -z "$shell_pid" ]] || kill "$shell_pid" 2>/dev/null || true
+  [[ -z "$manager_pid" ]] || kill "$manager_pid" 2>/dev/null || true
+  wait || true
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+"$bindir/game-manager" --catalog "$catalog" &
+manager_pid=$!
+"$bindir/console-shell" "$@" &
+shell_pid=$!
+# Une panne de l'un des deux composants met fin à la session entière.
+wait -n "$manager_pid" "$shell_pid"

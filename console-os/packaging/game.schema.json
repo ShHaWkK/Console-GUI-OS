@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Console OS local manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "name", "version", "developer", "executable", "runtime", "permissions", "controller_support"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "maxLength": 256, "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9_-]*)+$"},
+    "name": {"$ref": "#/$defs/text"},
+    "developer": {"$ref": "#/$defs/text"},
+    "version": {"type": "string", "maxLength": 256, "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "executable": {"$ref": "#/$defs/text"},
+    "runtime": {"const": "native"},
+    "permissions": {"type": "array", "maxItems": 0},
+    "controller_support": {"type": "boolean"}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[^\\u0000-\\u001f\\u007f]+$"}
+  },
+  "$comment": "Le chargeur C++ impose aussi chemin relatif, absence de liens, confinement, ID égal au dossier, texte non blanc et fichier exécutable. Le schéma seul ne suffit pas."
+}

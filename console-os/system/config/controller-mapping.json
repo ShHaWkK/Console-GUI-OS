@@ -1,0 +1,12 @@
+{
+  "status": "TODO: contrat de mapping, aucun lecteur SDL encore implémenté",
+  "schema_version": 1,
+  "buttons": {
+    "dpad_left": "left", "dpad_right": "right",
+    "dpad_up": "up", "dpad_down": "down",
+    "south": "accept", "east": "back", "guide": "home"
+  },
+  "left_stick": {"deadzone": 0.25, "repeat_delay_ms": 300, "repeat_interval_ms": 120},
+  "reserved": ["west", "north", "left_trigger", "right_trigger"],
+  "routing": "La navigation du shell doit être désactivée quand un jeu possède le focus ; Home exige un broker distinct."
+}

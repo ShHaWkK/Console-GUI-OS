@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+bindir=$(cd -- "$(dirname -- "$0")" && pwd)
+# Le bus est créé dans l'environnement du compositor, pas avant son démarrage.
+exec gamescope --expose-wayland -- dbus-run-session -- "$bindir/console-session"

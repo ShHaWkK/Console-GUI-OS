@@ -1,0 +1,14 @@
+build/
+console-os/build/
+*.user
+*.log
+*.tmp
+*.obj
+*.o
+*.so
+*.dll
+*.dylib
+*.exe
+*.pdb
+*.ilk
+*.autosave
