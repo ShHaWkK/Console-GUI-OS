@@ -2,11 +2,11 @@
 
 ## Current
 
-[ ] Ajouter les sous-écrans Settings (General/Account/System/Devices/Preferences) un par un, en réutilisant `Theme.qml` plutôt qu'en dupliquant des littéraux — c'est aussi le moment de migrer les espacements/tailles de police de Main.qml vers des tokens (voir docs/design-system.md section 4 « reste à faire »)
+[ ] Évalué : extraction `MenuItem` entre onglets et catégories Settings jugée non rentable pour l'instant (styles visuels réellement différents, pas juste une duplication cosmétique) — voir docs/design-system.md section 4. Prochaine tâche réelle à choisir ci-dessous.
 
 ## Next
 
-[ ] Écrire un backend manette physique (SDL3 ou évènements evdev) branché sur l'enum NavigationAction déjà présent côté shell, et sur l'action "menu" du Quick Menu (bouton Home manette)
+[ ] Écrire un backend manette physique (SDL3 ou évènements evdev) branché sur l'enum NavigationAction déjà présent côté shell, et sur l'action "menu" du Quick Menu (bouton Home manette). NOT TESTABLE avec un vrai périphérique dans cette session (WSL2 sans passthrough USB) — prévoir une validation sur machine Linux avec manette physique avant de considérer la tâche vérifiée.
 [ ] Écran Game Detail minimal (voir docs/ui-navigation.md section 4 — traiter le menu contextuel Library comme version MVP, confirmer avec l'utilisateur si besoin)
 
 ## Later

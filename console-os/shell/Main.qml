@@ -153,7 +153,12 @@ Window {
                 Text { text: navigation.page === 2 ? navigation.settingsCategories.length + " catégories" : "Bibliothèque locale • " + backend.games.length + " jeu(x)"; color: theme.colorTextSecondary; font.pixelSize: theme.typeLabel }
             }
             Rectangle {
-                width: parent.width; height: Math.max(220, window.height - 455); radius: theme.radiusCard
+                // -64 sur Settings : compense la rangée de catégories (34px de
+                // hauteur + 30px de spacing) insérée au-dessus, pour que le
+                // message de statut et le bandeau d'aide ne se chevauchent pas.
+                width: parent.width
+                height: Math.max(220, window.height - 455 - (navigation.page === 2 ? 64 : 0))
+                radius: theme.radiusCard
                 color: navigation.page === 2 ? theme.colorSurfaceAlt : theme.colorSurface
                 border.width: navigation.inContent ? 3 : 1
                 border.color: navigation.inContent ? theme.colorAccent : theme.colorBorder

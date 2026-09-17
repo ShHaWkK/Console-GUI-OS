@@ -56,6 +56,25 @@ QTest.keyClick(window, Qt.Key_Right)
 QTest.keyClick(window, Qt.Key_Right)
 assert navigation.property("page") == 2
 
+# Sous-navigation Settings : ←/→ doit réellement cycler les 5 catégories
+# (General/Account/System/Devices/Preferences), pas juste afficher un texte
+# statique. Vérifié via la propriété `selected`, réutilisée pour indexer
+# settingsCategories quand page === 2 (voir Main.qml).
+QTest.keyClick(window, Qt.Key_Down)
+assert navigation.property("inContent")
+assert navigation.property("selected") == 0
+QTest.keyClick(window, Qt.Key_Right)
+assert navigation.property("selected") == 1
+QTest.keyClick(window, Qt.Key_Left)
+QTest.keyClick(window, Qt.Key_Left)
+assert navigation.property("selected") == 4, "← doit boucler vers la dernière catégorie (Preferences)"
+QTest.keyClick(window, Qt.Key_Escape)
+assert navigation.property("page") == 0, "Échap doit toujours ramener à Home, y compris depuis Settings"
+
+QTest.keyClick(window, Qt.Key_Right)
+QTest.keyClick(window, Qt.Key_Right)
+assert navigation.property("page") == 2
+
 # Quick Menu overlay (CLAUDE.md section 27) : la page reste inchangée derrière
 # l'overlay, le focus est transféré à l'overlay puis restauré à la fermeture.
 quick_menu = window.findChild(QObject, "quickMenu")

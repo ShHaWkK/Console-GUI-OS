@@ -59,6 +59,23 @@ Relecture complète : refus root (manager et shell), double-lancement bloqué ex
 Severity:
 N/A (revue, pas un défaut)
 
+## ISSUE-006 — RÉSOLU 2026-09-17
+
+Component:
+Shell QML (shell/Main.qml), page Settings
+
+Problem:
+L'ajout de la rangée de catégories Settings (General/Account/System/Devices/Preferences) augmentait la hauteur de contenu au-dessus de la carte principale sans que la hauteur réservée à la carte (`Math.max(220, window.height - 455)`, une constante calibrée pour l'ancien layout) soit recalculée. Résultat visuel : le texte de statut et le bandeau d'aide en bas d'écran se chevauchaient sur la page Settings uniquement.
+
+Investigation :
+Trouvé par vérification visuelle réelle (capture d'écran hors-écran via PySide6/QQuickWindow.grabWindow, pas une supposition) — les 4 suites CTest ne pouvaient pas détecter ce problème car elles ne comparent pas le rendu pixel par pixel.
+
+Resolution:
+Hauteur de la carte réduite de 64px (hauteur de la rangée + spacing) spécifiquement sur la page Settings (`shell/Main.qml`). Reconfirmé par une nouvelle capture d'écran après correction : plus de chevauchement.
+
+Severity:
+Résolu (Low — cosmétique, mais démontre l'intérêt de vérifier visuellement plutôt que de supposer qu'un changement de layout QML n'a pas d'effet de bord)
+
 ## ISSUE-003
 
 Component:

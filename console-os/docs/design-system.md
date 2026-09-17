@@ -136,11 +136,23 @@ Mise à jour au 17 septembre 2026 :
   maintenant le Quick Menu, conformément à CLAUDE.md section 24 « Home →
   Quick Menu ») — changement délibéré, documenté ici et dans
   `.ai/DECISIONS.md` ADR-006.
-- **RESTE À FAIRE** : `ConsolePage`, `GameCard`, `MenuItem` et les autres
-  composants du tableau ci-dessus n'existent pas encore — ils seront extraits
-  au moment où un deuxième écran (Settings) en aura réellement besoin, pas
-  avant (CLAUDE.md section 57 : ne pas anticiper une abstraction sans un
-  deuxième cas d'usage réel).
+- **FAIT (Settings)** : sous-navigation par catégorie ajoutée à la page
+  Settings (General/Account/System/Devices/Preferences), avec contenu
+  honnête décrivant l'état réel de chaque catégorie plutôt que des contrôles
+  simulés (CLAUDE.md section 60). Bug de mise en page trouvé et corrigé par
+  vérification visuelle réelle (voir `.ai/ISSUES.md` ISSUE-006).
+- **ÉVALUÉ, PAS EXTRAIT** : en y regardant de plus près, la rangée d'onglets
+  Home/Library/Settings et la rangée de catégories Settings ne sont *pas* le
+  même composant malgré l'air de famille : les onglets sont des pilules
+  remplies avec un anneau de focus optionnel (fond uni, bordure 0 ou 2px),
+  les puces Settings sont toujours bordées et ne se remplissent que si
+  sélectionnées (fond transparent/accent, bordure 1px constante). Forcer un
+  composant `MenuItem` unique aurait soit changé silencieusement l'un des
+  deux styles, soit ajouté plus de propriétés de configuration que la
+  duplication actuelle (une douzaine de lignes) ne le justifie — CLAUDE.md
+  section 57 s'applique dans l'autre sens ici : ne pas abstraire sans gain
+  net. `ConsolePage`/`GameCard`/`MenuItem` restent donc non extraits ; à
+  reconsidérer si un troisième écran fait émerger un vrai motif commun.
 
 ## 5. Ce qui n'est pas encore fixé
 

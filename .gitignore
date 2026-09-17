@@ -1,5 +1,7 @@
 build/
+build-wsl/
 console-os/build/
+console-os/build-wsl/
 *.user
 *.log
 *.tmp

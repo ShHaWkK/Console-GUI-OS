@@ -1,7 +1,7 @@
 # Project Status
 
 Last update:
-2026-09-17 13:00
+2026-09-17 13:30
 
 ## Current phase
 
@@ -27,6 +27,7 @@ Phase 9: 0%
 - Design system (`shell/Theme.qml`) : couleurs, spacing, rayons, typographie et durées d'animation extraits fidèlement (mêmes valeurs, zéro changement visuel) et consommés dans Main.qml/QuickMenu.qml — plus aucune valeur littérale de style dupliquée dans ces deux fichiers
 - Transitions fluides réelles : pilules d'onglet et carte de contenu animées (`Behavior on color/border`), pulse de contenu au changement de page, panneau Quick Menu qui glisse à l'ouverture/fermeture (`anchors.leftMargin` animé, easing OutCubic)
 - Quick Menu overlay (`shell/QuickMenu.qml`) : 4 entrées réellement câblées (Reprendre/Accueil/Bibliothèque/Réglages), état de la page préservé derrière, focus transféré puis restauré — vérifié par `tests/qml_smoke.py`, maintenant **intégré à CTest** (test `qml-smoke`, SKIP propre si PySide6 absent)
+- Settings avec sous-navigation réelle par catégorie (General/Account/System/Devices/Preferences), pilules cliquables et navigables ←/→, contenu honnête (décrit l'état réel — souvent « non implémenté » — jamais un contrôle simulé qui ne ferait rien) — vérifié par capture d'écran hors-écran et par `tests/qml_smoke.py`
 - Point d'entrée `NavigationAction` sémantique (clavier ; manette physique non branchée)
 - Game Manager D-Bus (`services/game-manager`) : découverte catalogue, lecture manifest, lancement, arrêt, PID, stdout/stderr
 - Parseur + validateur strict de manifest `game.json` (`core/manifest.cpp`) : schema, ID, version, chemins relatifs, anti path-traversal, anti-symlink, taille bornée
@@ -56,23 +57,23 @@ Phase 9: 0%
 
 ## Current build
 
-**PASS.** Rejoué le 2026-09-17 dans WSL2 Ubuntu 24.04 (GCC 13.3.0, CMake 3.28.3, Qt 6.4.2) après reconfiguration CMake (nouveau test `qml-smoke`). Compilation complète sans erreur (seuls warnings "clock skew" inoffensifs liés au montage /mnt/c).
+**PASS.** Rejoué le 2026-09-17 dans WSL2 Ubuntu 24.04 (GCC 13.3.0, CMake 3.28.3, Qt 6.4.2) après ajout de la sous-navigation Settings. Compilation complète sans erreur (seuls warnings "clock skew" inoffensifs liés au montage /mnt/c).
 
 ## Current tests
 
-**4/4 suites CTest PASS** : manifest (22/22), manager (3/3), integration (D-Bus réel), **qml-smoke (nouveau, intégré cette session)**. Détail dans `build-wsl/Testing/Temporary/LastTest.log`.
+**4/4 suites CTest PASS** (3 exécutions consécutives confirmées stables) : manifest (22/22), manager (3/3), integration (D-Bus réel), qml-smoke (couvre maintenant aussi le cycle ←/→ des 5 catégories Settings avec rebouclage). Détail dans `build-wsl/Testing/Temporary/LastTest.log`.
 
-Le test `qml-smoke` couvre explicitement le Quick Menu (ouverture, page derrière inchangée, sélection, fermeture, focus restauré). Il est SKIP proprement (pas d'échec) si PySide6 n'est pas installé, comme `integration` l'est déjà pour l'absence de bus D-Bus — voir `CMakeLists.txt` `SKIP_REGULAR_EXPRESSION`.
+**Vérification visuelle réelle** (pas supposée) : capture d'écran hors-écran de Home, du Quick Menu en cours d'animation, et de Settings/Devices. A révélé et permis de corriger un vrai bug de mise en page : la rangée de catégories Settings ajoutée faisait chevaucher le message de statut et le bandeau d'aide en bas d'écran (la hauteur de la carte de contenu n'était pas recalculée). Corrigé dans `Main.qml` (réservation de 64px supplémentaires sur la page Settings) et reconfirmé par capture après correction.
 
-**Bug de robustesse trouvé et corrigé pendant cette tranche** : le smoke test QML échouait de façon non déterministe (~1 exécution sur 2) avec des `TypeError: Cannot read property ... of null` après son propre PASS, causées par l'ordre non garanti du ramasse-miettes Python en fin de script (le wrapper `backend` pouvait être libéré avant le moteur QML `engine`). Vérifié que **le vrai binaire n'est pas concerné** : `shell/main.cpp` déclare `Backend` avant `QQmlApplicationEngine`, donc le C++ détruit toujours le moteur avant le backend (ordre inverse de construction). Corrigé en reproduisant cet ordre explicitement en fin de script (`tests/qml_smoke.py`) : 6/6 exécutions propres après correction, contre un cas d'échec sur 4 avant.
+**Bug de robustesse trouvé et corrigé dans le tour précédent** : flakiness non déterministe du smoke test QML due à l'ordre de destruction Python — voir ISSUE-004 dans `.ai/ISSUES.md`.
 
 ## Last completed task
 
-Design system complété (spacing/typographie/animations), transitions fluides ajoutées, smoke test QML intégré à CTest, et un vrai bug de flakiness de test trouvé et corrigé (voir ci-dessus). Tout vérifié par build + 4 suites CTest réelles dans WSL2. Voir ADR-005 et ADR-006 dans `.ai/DECISIONS.md`.
+Sous-navigation Settings réelle par catégorie (General/Account/System/Devices/Preferences), avec contenu honnête (pas de contrôle simulé) et correction d'un bug de mise en page trouvé par vérification visuelle. Build + 4 suites CTest + captures d'écran, tout vérifié réellement dans WSL2.
 
 ## Current task
 
-Revue de robustesse du backend D-Bus (`services/game-manager`) : déjà solide (refus root, double-lancement bloqué, arrêt gracieux SIGTERM→SIGKILL après 3s, environnement enfant allowlist, revalidation du manifest juste avant lancement, rate-limit des logs) — aucun changement de code jugé nécessaire pour l'instant sans bug identifié (voir `.ai/ISSUES.md` pour ce qui reste réellement ouvert). Prochaine tâche : choisir entre sous-écrans Settings ou backend manette physique (`.ai/NEXT.md`).
+Choisir la prochaine tâche de `.ai/NEXT.md` : extraction de composants réutilisables (`MenuItem`/`ConsolePage`, justifiée maintenant que Settings est un deuxième écran réel avec sa propre sous-navigation) ou backend manette physique.
 
 ## Note environnement
 
