@@ -76,6 +76,17 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(integration PROPERTIES
         SKIP_REGULAR_EXPRESSION "^SKIP:"
     )
+
+    # Optionnel : ignoré (SKIP) si PySide6 n'est pas installé, plutôt que de
+    # rendre la dépendance obligatoire pour tout le monde (voir docs/build.md).
+    # Rendu hors-écran pour fonctionner sans serveur graphique (CI, WSL...).
+    add_test(NAME qml-smoke
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/qml_smoke.py"
+    )
+    set_tests_properties(qml-smoke PROPERTIES
+        SKIP_REGULAR_EXPRESSION "^SKIP:"
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software"
+    )
 endif()
 
 install(TARGETS console-shell game-manager RUNTIME DESTINATION bin)

@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/">
     <file alias="shell/Main.qml">Main.qml</file>
+    <file alias="shell/Theme.qml">Theme.qml</file>
+    <file alias="shell/QuickMenu.qml">QuickMenu.qml</file>
   </qresource>
 </RCC>

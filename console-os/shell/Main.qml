@@ -8,8 +8,12 @@ Window {
     title: "Console OS"
     visible: !backend.gameRunning
     visibility: backend.gameRunning ? Window.Hidden : (windowed ? Window.Windowed : Window.FullScreen)
-    color: "#0d1519"
+    color: theme.colorBackground
     onVisibleChanged: if (visible) { requestActivate(); navigation.forceActiveFocus() }
+
+    property bool quickMenuOpen: false
+
+    Theme { id: theme }
 
     Item {
         id: navigation
@@ -21,9 +25,22 @@ Window {
         property int selected: 0
         property var currentGame: backend.games.length > selected ? backend.games[selected] : null
 
+        // Contenu Settings honnête : pas de réglage qui prétend fonctionner
+        // alors qu'aucun service ne le porte encore (CLAUDE.md section 60).
+        // Chaque catégorie décrit l'état réel, y compris quand cet état est
+        // "non implémenté" — jamais un contrôle interactif simulé.
+        readonly property var settingsCategories: [
+            { name: "General", detail: "Aucun réglage d'affichage n'est encore configurable depuis ce prototype.\nThèmes et contrôle parental : non implémentés." },
+            { name: "Account", detail: "Aucun compte utilisateur n'est configuré.\nGestion des profils : non implémentée (voir roadmap, Phase 2 et au-delà)." },
+            { name: "System", detail: backend.systemInfo + "\nRéseau, audio et vidéo : non implémentés." },
+            { name: "Devices", detail: "Aucune manette détectée : le backend d'entrée manette physique n'est pas encore branché.\nSouris et clavier : gérés par le système d'exploitation, pas par cette application." },
+            { name: "Preferences", detail: "Notifications, capture et partage : non implémentés." }
+        ]
+
         // Point d'entrée commun : le futur backend SDL appellera ces mêmes actions.
         function dispatch(action) {
-            if (action === "home" || action === "back") { page = 0; inContent = false; selected = 0 }
+            if (action === "menu") { window.quickMenuOpen = true }
+            else if (action === "back") { page = 0; inContent = false; selected = 0 }
             else if (action === "refresh") backend.refresh()
             else if (action === "up") inContent = false
             else if (action === "down" || action === "tab") inContent = !inContent
@@ -31,6 +48,7 @@ Window {
                 let delta = action === "left" ? -1 : 1
                 if (!inContent) { page = (page + delta + 3) % 3; selected = 0 }
                 else if (page < 2 && backend.games.length) selected = (selected + delta + backend.games.length) % backend.games.length
+                else if (page === 2) selected = (selected + delta + settingsCategories.length) % settingsCategories.length
             } else if (action === "accept") {
                 if (!inContent) inContent = true
                 else if (page < 2 && currentGame) backend.launch(currentGame.id)
@@ -46,7 +64,7 @@ Window {
             case Qt.Key_Tab: action = "tab"; break
             case Qt.Key_Return: case Qt.Key_Enter: case Qt.Key_Space: action = "accept"; break
             case Qt.Key_Escape: action = "back"; break
-            case Qt.Key_Home: action = "home"; break
+            case Qt.Key_Home: action = "menu"; break
             case Qt.Key_R: action = "refresh"; break
             }
             if (action !== "") { dispatch(action); event.accepted = true }
@@ -54,73 +72,116 @@ Window {
         Connections {
             target: backend
             function onChanged() {
-                if (navigation.selected >= backend.games.length) navigation.selected = 0
+                // Ne s'applique qu'à la navigation des jeux (Home/Library) : sur
+                // Settings, `selected` indexe settingsCategories, pas backend.games,
+                // et ne doit pas être réinitialisé par un changement côté backend.
+                if (navigation.page < 2 && navigation.selected >= backend.games.length) navigation.selected = 0
             }
+        }
+        // Petit "pulse" de contenu à chaque changement de page/onglet : rend la
+        // navigation plus lisible sans dépendre d'une transition de layout
+        // complète (qui exigerait un vrai NavigationStack, hors périmètre ici).
+        Connections {
+            target: navigation
+            function onPageChanged() { cardFade.restart() }
+        }
+        SequentialAnimation {
+            id: cardFade
+            NumberAnimation { target: cardContent; property: "opacity"; to: 0.35; duration: theme.motionFast }
+            NumberAnimation { target: cardContent; property: "opacity"; to: 1; duration: theme.motionFast }
         }
 
         Rectangle {
             width: parent.width * 0.65; height: width; radius: width / 2
             anchors.right: parent.right; anchors.rightMargin: -width * 0.45
             anchors.top: parent.top; anchors.topMargin: -height * 0.5
-            color: "#14292b"
+            color: theme.colorBackgroundAccent
         }
         Column {
-            anchors.fill: parent; anchors.margins: 52; spacing: 30
+            anchors.fill: parent; anchors.margins: theme.spacingPageGutter; spacing: theme.spacingSectionGap
             Row {
-                width: parent.width; height: 48; spacing: 16
+                width: parent.width; height: 48; spacing: theme.spacingMd
                 Rectangle {
-                    width: 38; height: 38; radius: 12; color: "#bdedc7"; rotation: -12
-                    Text { anchors.centerIn: parent; text: "C"; color: "#10241b"; font.pixelSize: 25; font.bold: true }
+                    width: 38; height: 38; radius: 12; color: theme.colorAccent; rotation: -12
+                    Text { anchors.centerIn: parent; text: "C"; color: theme.colorAccentTextAlt; font.pixelSize: theme.typeBrandMark; font.bold: true }
                 }
-                Text { text: "CONSOLE OS"; color: "#f1f3e9"; font.pixelSize: 22; font.letterSpacing: 3; anchors.verticalCenter: parent.verticalCenter }
+                Text { text: "CONSOLE OS"; color: theme.colorTextPrimary; font.pixelSize: theme.typeBrand; font.letterSpacing: 3; anchors.verticalCenter: parent.verticalCenter }
             }
             Row {
-                spacing: 12
+                spacing: theme.spacingTabsGap
                 Repeater {
                     model: ["Home", "Library", "Settings"]
                     Rectangle {
                         required property string modelData
                         required property int index
-                        width: 140; height: 46; radius: 23
-                        color: navigation.page === index ? "#bdedc7" : "#19252b"
+                        width: 140; height: 46; radius: theme.radiusPill
+                        color: navigation.page === index ? theme.colorAccent : theme.colorSurfaceMuted
                         border.width: navigation.page === index && !navigation.inContent ? 2 : 0
-                        border.color: "#ffffff"
-                        Text { anchors.centerIn: parent; text: modelData; font.pixelSize: 17; color: navigation.page === index ? "#12241a" : "#bac6c8" }
+                        border.color: theme.colorTextPrimary
+                        Behavior on color { ColorAnimation { duration: theme.motionFast } }
+                        Behavior on border.width { NumberAnimation { duration: theme.motionFast } }
+                        Text { anchors.centerIn: parent; text: modelData; font.pixelSize: theme.typeLabel; color: navigation.page === index ? theme.colorAccentText : theme.colorTextSecondary }
                         MouseArea { anchors.fill: parent; onClicked: { navigation.page = index; navigation.inContent = false; navigation.forceActiveFocus() } }
                     }
                 }
             }
+            Row {
+                visible: navigation.page === 2
+                height: visible ? 34 : 0
+                spacing: theme.spacingSm
+                Repeater {
+                    model: navigation.settingsCategories
+                    Rectangle {
+                        required property var modelData
+                        required property int index
+                        width: 96; height: 30; radius: theme.radiusControl
+                        color: navigation.inContent && navigation.selected === index ? theme.colorAccent : "transparent"
+                        border.width: 1
+                        border.color: navigation.selected === index ? theme.colorAccent : theme.colorBorder
+                        Behavior on color { ColorAnimation { duration: theme.motionFast } }
+                        Text {
+                            anchors.centerIn: parent; text: modelData.name; font.pixelSize: theme.typeBadge
+                            color: navigation.inContent && navigation.selected === index ? theme.colorAccentText : theme.colorTextSecondary
+                        }
+                        MouseArea { anchors.fill: parent; onClicked: { navigation.selected = index; navigation.inContent = true; navigation.forceActiveFocus() } }
+                    }
+                }
+            }
             Column {
-                width: parent.width; spacing: 10
-                Text { text: navigation.page === 0 ? "Votre prochaine partie." : navigation.page === 1 ? "Vos jeux, ici." : "Votre console."; color: "#f1f3e9"; font.pixelSize: 42; font.bold: true }
-                Text { text: navigation.page === 2 ? "Informations de cette session" : "Bibliothèque locale • " + backend.games.length + " jeu(x)"; color: "#91a7ac"; font.pixelSize: 17 }
+                width: parent.width; spacing: theme.spacingTitleGap
+                Text { text: navigation.page === 0 ? "Votre prochaine partie." : navigation.page === 1 ? "Vos jeux, ici." : "Votre console."; color: theme.colorTextPrimary; font.pixelSize: theme.typeDisplay; font.bold: true }
+                Text { text: navigation.page === 2 ? navigation.settingsCategories.length + " catégories" : "Bibliothèque locale • " + backend.games.length + " jeu(x)"; color: theme.colorTextSecondary; font.pixelSize: theme.typeLabel }
             }
             Rectangle {
-                width: parent.width; height: Math.max(220, window.height - 455); radius: 26
-                color: navigation.page === 2 ? "#19262d" : "#233c3c"
-                border.width: navigation.inContent && navigation.page < 2 ? 3 : 1
-                border.color: navigation.inContent && navigation.page < 2 ? "#bdedc7" : "#344a4b"
-                Behavior on border.color { ColorAnimation { duration: 120 } }
+                width: parent.width; height: Math.max(220, window.height - 455); radius: theme.radiusCard
+                color: navigation.page === 2 ? theme.colorSurfaceAlt : theme.colorSurface
+                border.width: navigation.inContent ? 3 : 1
+                border.color: navigation.inContent ? theme.colorAccent : theme.colorBorder
+                Behavior on color { ColorAnimation { duration: theme.motionFast } }
+                Behavior on border.color { ColorAnimation { duration: theme.motionFast } }
+                Behavior on border.width { NumberAnimation { duration: theme.motionFast } }
                 Column {
-                    anchors.fill: parent; anchors.margins: 32; spacing: 14
+                    id: cardContent
+                    anchors.fill: parent; anchors.margins: theme.spacingXl; spacing: theme.spacingCardContent
+                    Behavior on opacity { NumberAnimation { duration: theme.motionFast } }
                     Text {
-                        text: navigation.page === 2 ? "SYSTÈME" : "NATIVE  /  " + (navigation.selected + 1).toString().padStart(2, "0")
-                        color: "#bdedc7"; font.pixelSize: 13; font.letterSpacing: 3
+                        text: navigation.page === 2 ? "RÉGLAGES  /  " + (navigation.selected + 1).toString().padStart(2, "0") : "NATIVE  /  " + (navigation.selected + 1).toString().padStart(2, "0")
+                        color: theme.colorAccent; font.pixelSize: theme.typeBadge; font.letterSpacing: 3
                     }
                     Text {
                         width: parent.width; elide: Text.ElideRight
-                        text: navigation.page === 2 ? "Console OS · Prototype 0.1" : navigation.currentGame ? navigation.currentGame.name : "Aucun jeu disponible"
-                        color: "#f1f3e9"; font.pixelSize: 34; font.bold: true
+                        text: navigation.page === 2 ? navigation.settingsCategories[navigation.selected].name : navigation.currentGame ? navigation.currentGame.name : "Aucun jeu disponible"
+                        color: theme.colorTextPrimary; font.pixelSize: theme.typeHeading; font.bold: true
                     }
                     Text {
                         width: parent.width; wrapMode: Text.Wrap
-                        text: navigation.page === 2 ? backend.systemInfo : navigation.currentGame ? navigation.currentGame.developer + "  •  v" + navigation.currentGame.version : "Ajoutez un jeu de confiance au catalogue, puis appuyez sur R."
-                        color: "#b3c8c8"; font.pixelSize: 17
+                        text: navigation.page === 2 ? "Console OS · Prototype 0.1" : navigation.currentGame ? navigation.currentGame.developer + "  •  v" + navigation.currentGame.version : "Ajoutez un jeu de confiance au catalogue, puis appuyez sur R."
+                        color: theme.colorTextBody; font.pixelSize: theme.typeLabel
                     }
                     Text {
                         width: parent.width; wrapMode: Text.Wrap
-                        text: navigation.page === 2 ? "Réseau, audio, vidéo et profils : à venir.\nManette : intégration matérielle à venir." : "←  →  Parcourir      Entrée  Jouer"
-                        color: "#b3c8c8"; font.pixelSize: 16
+                        text: navigation.page === 2 ? navigation.settingsCategories[navigation.selected].detail : "←  →  Parcourir      Entrée  Jouer"
+                        color: theme.colorTextBody; font.pixelSize: theme.typeBody
                     }
                 }
                 MouseArea {
@@ -128,13 +189,22 @@ Window {
                     onClicked: { navigation.inContent = true; navigation.dispatch("accept") }
                 }
             }
-            Text { width: parent.width; text: backend.message; color: "#bdedc7"; font.pixelSize: 15; elide: Text.ElideRight }
+            Text { width: parent.width; text: backend.message; color: theme.colorAccent; font.pixelSize: theme.typeMessage; elide: Text.ElideRight }
         }
         Text {
             anchors.bottom: parent.bottom; anchors.left: parent.left
-            anchors.margins: 24; anchors.leftMargin: 52
-            text: "↑ ↓  Navigation     ← →  Choisir     Entrée  Valider     Échap  Accueil     R  Actualiser"
-            color: "#82999f"; font.pixelSize: 14
+            anchors.margins: theme.spacingLg; anchors.leftMargin: theme.spacingPageGutter
+            text: "↑ ↓  Navigation     ← →  Choisir     Entrée  Valider     Échap  Accueil     Début  Menu rapide     R  Actualiser"
+            color: theme.colorTextMuted; font.pixelSize: theme.typeFooter
         }
+    }
+
+    QuickMenu {
+        id: quickMenu
+        objectName: "quickMenu"
+        theme: theme
+        active: window.quickMenuOpen
+        onClosed: { window.quickMenuOpen = false; navigation.forceActiveFocus() }
+        onNavigateTo: function(page) { navigation.page = page; navigation.inContent = false; navigation.selected = 0 }
     }
 }
