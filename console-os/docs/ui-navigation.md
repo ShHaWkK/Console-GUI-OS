@@ -62,21 +62,32 @@ Overlay de capture (déclenché en jeu, hors flux Home) ──► choix (screens
 ## 3. Ordre d'implémentation recommandé
 
 Aligné sur CLAUDE.md sections 26 et 63 (« First Playable ») et sur l'état
-réel du code (`shell/Main.qml` a déjà Home/Library/Settings) :
+réel du code :
 
 ```text
-1. Boot → Home → Library → Hello Console → Start → Stop → retour Library   [DÉJÀ EN PLACE, à vérifier end-to-end]
-2. Settings root (déjà en place) → sous-écrans General/Account/System/Devices/Preferences (TODO)
-3. Quick Menu overlay (TODO — voir .ai/NEXT.md)
+1. Boot → Home → Library → Game Detail → Hello Console → Start → Stop → retour Library   [IMPLÉMENTÉ]
+2. Settings root + sous-écrans General/Account/System/Devices/Preferences   [IMPLÉMENTÉ, contenu honnête sans réglage simulé]
+3. Quick Menu overlay   [IMPLÉMENTÉ]
 4. Profile / Friends / Messages / Notifications / Album (TODO, non prioritaire au MVP)
 ```
 
-## 4. Point ouvert : Game Detail
+## 4. Game Detail — IMPLEMENTED (version minimale, 17 septembre 2026)
 
 Le prompt maître (section 26) place un écran « Game Detail » entre Library et
 Hello Console, mais aucune maquette dédiée ne porte ce nom. `library 1-5
-menu.png` (menu contextuel sur une jaquette) est le candidat le plus proche.
-Décision prise pour avancer sans bloquer : traiter ce menu contextuel comme
-version minimale de Game Detail pour le MVP (titre, jaquette, actions
-Lancer/Désinstaller/Favoris), et demander confirmation à l'utilisateur si une
-maquette Game Detail séparée existe ailleurs avant d'aller plus loin.
+menu.png` (menu contextuel sur une jaquette) était le candidat le plus proche
+et sert de référence à ce qui a été implémenté.
+
+Version minimale retenue (voir ADR-007 dans `.ai/DECISIONS.md`) : en
+Bibliothèque, un premier Entrée sur un jeu ouvre un état de confirmation
+(badge « CONFIRMER », hint « Entrée Lancer / Échap Retour à la
+bibliothèque ») plutôt que de lancer immédiatement ; un second Entrée
+confirme. Sur Home, Entrée lance toujours directement (pas d'étape
+intermédiaire, cohérent avec le hint « A Start » de la maquette Home).
+
+Volontairement **pas** implémenté, pour rester honnête (CLAUDE.md section
+60) : pas d'actions « Désinstaller » ou « Favoris » dans ce menu, puisque
+aucun service ne les porte encore côté backend (le Game Manager n'expose que
+`ListGames`/`Launch`/`Stop`/`Status`). Les ajouter maintenant aurait signifié
+des boutons qui ne font rien. À étendre quand ces capacités existeront
+réellement côté `services/game-manager`.

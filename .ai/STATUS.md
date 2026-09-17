@@ -1,7 +1,7 @@
 # Project Status
 
 Last update:
-2026-09-17 13:30
+2026-09-17 14:30
 
 ## Current phase
 
@@ -28,6 +28,8 @@ Phase 9: 0%
 - Transitions fluides réelles : pilules d'onglet et carte de contenu animées (`Behavior on color/border`), pulse de contenu au changement de page, panneau Quick Menu qui glisse à l'ouverture/fermeture (`anchors.leftMargin` animé, easing OutCubic)
 - Quick Menu overlay (`shell/QuickMenu.qml`) : 4 entrées réellement câblées (Reprendre/Accueil/Bibliothèque/Réglages), état de la page préservé derrière, focus transféré puis restauré — vérifié par `tests/qml_smoke.py`, maintenant **intégré à CTest** (test `qml-smoke`, SKIP propre si PySide6 absent)
 - Settings avec sous-navigation réelle par catégorie (General/Account/System/Devices/Preferences), pilules cliquables et navigables ←/→, contenu honnête (décrit l'état réel — souvent « non implémenté » — jamais un contrôle simulé qui ne ferait rien) — vérifié par capture d'écran hors-écran et par `tests/qml_smoke.py`
+- Game Detail minimal (`shell/Main.qml`, `showDetail`) : en Bibliothèque, confirmation à deux temps avant de lancer un jeu (Entrée ouvre le détail, Entrée confirme) ; Home garde le lancement direct. Back à deux niveaux (ferme le détail, puis quitte la Bibliothèque). Voir ADR-007 dans `.ai/DECISIONS.md`
+- Clavier virtuel (`shell/VirtualKeyboard.qml`) : grille QWERTY réellement fonctionnelle (taper, ⌫, espace, fermeture), overlay avec focus transféré/restauré comme Quick Menu, intégré à un vrai point d'usage (Settings ▸ Devices, « Entrée pour tester ») plutôt que laissé sans consommateur — vérifié par capture d'écran et par `tests/qml_smoke.py` (saisie, suppression et fermeture via la grille, pas seulement l'ouverture)
 - Point d'entrée `NavigationAction` sémantique (clavier ; manette physique non branchée)
 - Game Manager D-Bus (`services/game-manager`) : découverte catalogue, lecture manifest, lancement, arrêt, PID, stdout/stderr
 - Parseur + validateur strict de manifest `game.json` (`core/manifest.cpp`) : schema, ID, version, chemins relatifs, anti path-traversal, anti-symlink, taille bornée
@@ -45,7 +47,6 @@ Phase 9: 0%
 - Manette physique (aucun backend d'entrée réel)
 - Session Gamescope/greetd en production (seule la recette est documentée dans bringup.md, jamais exécutée sur Arch réel)
 - Profils/comptes utilisateurs, login, boot screen (aucun code — maquette seulement)
-- Clavier virtuel (aucun code — maquette seulement)
 
 ## Not tested
 
@@ -57,23 +58,25 @@ Phase 9: 0%
 
 ## Current build
 
-**PASS.** Rejoué le 2026-09-17 dans WSL2 Ubuntu 24.04 (GCC 13.3.0, CMake 3.28.3, Qt 6.4.2) après ajout de la sous-navigation Settings. Compilation complète sans erreur (seuls warnings "clock skew" inoffensifs liés au montage /mnt/c).
+**PASS.** Rejoué le 2026-09-17 dans WSL2 Ubuntu 24.04 (GCC 13.3.0, CMake 3.28.3, Qt 6.4.2) après ajout du clavier virtuel. Compilation complète sans erreur (seuls warnings "clock skew" inoffensifs liés au montage /mnt/c).
 
 ## Current tests
 
-**4/4 suites CTest PASS** (3 exécutions consécutives confirmées stables) : manifest (22/22), manager (3/3), integration (D-Bus réel), qml-smoke (couvre maintenant aussi le cycle ←/→ des 5 catégories Settings avec rebouclage). Détail dans `build-wsl/Testing/Temporary/LastTest.log`.
+**4/4 suites CTest PASS** (plusieurs exécutions consécutives confirmées stables) : manifest (22/22), manager (3/3), integration (D-Bus réel), qml-smoke (couvre maintenant aussi une vraie saisie au clavier virtuel : taper deux lettres, supprimer via la touche ⌫ de la grille, fermer via la touche OK de la grille). Détail dans `build-wsl/Testing/Temporary/LastTest.log`.
 
-**Vérification visuelle réelle** (pas supposée) : capture d'écran hors-écran de Home, du Quick Menu en cours d'animation, et de Settings/Devices. A révélé et permis de corriger un vrai bug de mise en page : la rangée de catégories Settings ajoutée faisait chevaucher le message de statut et le bandeau d'aide en bas d'écran (la hauteur de la carte de contenu n'était pas recalculée). Corrigé dans `Main.qml` (réservation de 64px supplémentaires sur la page Settings) et reconfirmé par capture après correction.
+**Vérification visuelle réelle** (pas supposée) : capture d'écran hors-écran du clavier virtuel ouvert avec du texte réellement saisi ("qwe") affiché en direct. Mise en page propre, pas de chevauchement.
 
-**Bug de robustesse trouvé et corrigé dans le tour précédent** : flakiness non déterministe du smoke test QML due à l'ordre de destruction Python — voir ISSUE-004 dans `.ai/ISSUES.md`.
+**Bug trouvé pendant l'écriture du test lui-même** (pas dans le produit) : ma première version du test naviguait la grille du clavier en ligne droite (uniquement ←/→) pour atteindre la touche ⌫, qui est en réalité sur une autre ligne — l'assertion a échoué de façon reproductible (4/4 tentatives), révélant l'erreur de navigation du test, pas un bug du composant. Corrigé en ajoutant les appuis ↓ manquants.
+
+**Bugs de robustesse trouvés et corrigés dans les tours précédents** : flakiness non déterministe du smoke test QML (ISSUE-004), chevauchement de mise en page Settings (ISSUE-006) — voir `.ai/ISSUES.md`.
 
 ## Last completed task
 
-Sous-navigation Settings réelle par catégorie (General/Account/System/Devices/Preferences), avec contenu honnête (pas de contrôle simulé) et correction d'un bug de mise en page trouvé par vérification visuelle. Build + 4 suites CTest + captures d'écran, tout vérifié réellement dans WSL2.
+Clavier virtuel QML fonctionnel (`shell/VirtualKeyboard.qml`), intégré à un vrai point d'usage dans Settings ▸ Devices plutôt que laissé sans consommateur. Build + 4 suites CTest + capture d'écran, tout vérifié réellement dans WSL2.
 
 ## Current task
 
-Choisir la prochaine tâche de `.ai/NEXT.md` : extraction de composants réutilisables (`MenuItem`/`ConsolePage`, justifiée maintenant que Settings est un deuxième écran réel avec sa propre sous-navigation) ou backend manette physique.
+L'utilisateur a demandé de continuer sur : clavier virtuel (FAIT ci-dessus), profils/login/boot, ARM64, Gamescope réel, AWS. Gamescope réel et AWS restent explicitement hors de portée de cette session (pas de GPU/Wayland dans WSL2 ; AWS nécessite des identifiants et engage des coûts réels que je n'ai pas l'autorisation d'engager sans confirmation explicite). Prochaine étape réaliste : vérifier la faisabilité d'un cross-build ARM64 (juste une vérification de disponibilité des paquets, avant toute installation lourde), puis profils/login/boot avec des assets honnêtes (pas de placeholder qui prétend être un vrai compte).
 
 ## Note environnement
 

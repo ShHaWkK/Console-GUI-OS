@@ -3,5 +3,6 @@
     <file alias="shell/Main.qml">Main.qml</file>
     <file alias="shell/Theme.qml">Theme.qml</file>
     <file alias="shell/QuickMenu.qml">QuickMenu.qml</file>
+    <file alias="shell/VirtualKeyboard.qml">VirtualKeyboard.qml</file>
   </qresource>
 </RCC>

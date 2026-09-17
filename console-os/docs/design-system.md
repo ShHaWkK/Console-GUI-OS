@@ -111,7 +111,7 @@ une piste future, pas nécessaire tant qu'il n'y a qu'un seul niveau de page.
 | `NotificationToast` | home-notifications-* | Toast transitoire coin d'écran |
 | `ModalDialog` | Overlay capture | Boîte de dialogue centrée avec choix |
 | `QuickMenu` **(IMPLEMENTED — `shell/QuickMenu.qml`)** | menu (rapide)/ | Overlay sidebar avec 4 entrées réellement câblées (Reprendre/Accueil/Bibliothèque/Réglages), focus transféré/restauré, page derrière préservée — vérifié par `tests/qml_smoke.py` |
-| `VirtualKeyboard` | virtual keyboard/, messages | Clavier QWERTY avec hints manette (LB/RB/LT/Y) |
+| `VirtualKeyboard` **(IMPLEMENTED — `shell/VirtualKeyboard.qml`)** | virtual keyboard/, messages | Grille QWERTY navigable, une vraie saisie (lettre/⌫/espace/OK), intégrée comme test réel dans Settings ▸ Devices — pas encore branchée à `messages` (aucun champ de saisie de message n'existe côté backend) |
 | `LoadingIndicator` | — (non présent explicitement dans les maquettes, à prévoir) | Indicateur de chargement générique |
 | `ErrorDialog` | — (dérivé de ModalDialog) | Erreur bloquante (ex. jeu introuvable) |
 

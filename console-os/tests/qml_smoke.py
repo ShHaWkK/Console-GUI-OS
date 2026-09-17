@@ -48,8 +48,21 @@ QTest.keyClick(window, Qt.Key_Right)
 assert navigation.property("page") == 1
 QTest.keyClick(window, Qt.Key_Down)
 assert navigation.property("inContent")
+
+# Game Detail minimal (CLAUDE.md section 26) : en Bibliothèque, le premier
+# Entrée ouvre une confirmation au lieu de lancer directement (contrairement
+# à Home). Le jeu ne doit pas démarrer avant le second Entrée.
 QTest.keyClick(window, Qt.Key_Return)
-assert backend.launched == "org.consoleos.hello"
+assert navigation.property("showDetail") is True, "premier Entrée en Bibliothèque doit ouvrir le détail, pas lancer"
+assert backend.launched is None, "le jeu ne doit pas être lancé avant confirmation"
+QTest.keyClick(window, Qt.Key_Return)
+assert backend.launched == "org.consoleos.hello", "second Entrée doit confirmer le lancement"
+
+# Back est à deux niveaux depuis le détail : un premier Échap ferme la
+# confirmation sans quitter la Bibliothèque, un second ramène à Home.
+QTest.keyClick(window, Qt.Key_Escape)
+assert navigation.property("showDetail") is False
+assert navigation.property("page") == 1, "premier Échap doit fermer le détail sans quitter la Bibliothèque"
 QTest.keyClick(window, Qt.Key_Escape)
 assert navigation.property("page") == 0
 QTest.keyClick(window, Qt.Key_Right)
@@ -68,6 +81,37 @@ assert navigation.property("selected") == 1
 QTest.keyClick(window, Qt.Key_Left)
 QTest.keyClick(window, Qt.Key_Left)
 assert navigation.property("selected") == 4, "← doit boucler vers la dernière catégorie (Preferences)"
+
+# Clavier virtuel (Settings ▸ Devices, index 3) : vérifie une vraie saisie,
+# pas seulement que l'overlay s'affiche. Couvre lettre, touche ⌫ de la
+# grille et fermeture via la touche "OK" de la grille.
+QTest.keyClick(window, Qt.Key_Right)  # 4 -> 0 (General, boucle)
+QTest.keyClick(window, Qt.Key_Right)  # -> 1 (Account)
+QTest.keyClick(window, Qt.Key_Right)  # -> 2 (System)
+QTest.keyClick(window, Qt.Key_Right)  # -> 3 (Devices)
+assert navigation.property("selected") == 3
+virtual_keyboard = window.findChild(QObject, "virtualKeyboard")
+assert virtual_keyboard is not None
+QTest.keyClick(window, Qt.Key_Return)
+QTest.qWait(150)
+assert virtual_keyboard.property("active") is True, "Entrée sur Devices doit ouvrir le clavier virtuel"
+QTest.keyClick(window, Qt.Key_Return)  # presse 'q' (sélection par défaut)
+assert virtual_keyboard.property("text") == "q"
+QTest.keyClick(window, Qt.Key_Right)   # -> 'w'
+QTest.keyClick(window, Qt.Key_Return)
+assert virtual_keyboard.property("text") == "qw"
+QTest.keyClick(window, Qt.Key_Down)    # ligne "a s d f g h j k l" (colonne clampée à 1 -> 's')
+QTest.keyClick(window, Qt.Key_Down)    # ligne "z x c v b n m ⌫" (colonne clampée à 1 -> 'x')
+for _ in range(6):
+    QTest.keyClick(window, Qt.Key_Right)  # colonne 1 -> 7 : rejoint la touche ⌫
+QTest.keyClick(window, Qt.Key_Return)
+assert virtual_keyboard.property("text") == "q", "la touche ⌫ de la grille doit supprimer le dernier caractère"
+QTest.keyClick(window, Qt.Key_Down)    # ligne "␣ Espace" / "OK"
+QTest.keyClick(window, Qt.Key_Return)  # presse "OK" -> ferme l'overlay
+QTest.qWait(150)
+assert virtual_keyboard.property("active") is False, "la touche OK de la grille doit fermer le clavier"
+assert navigation.property("page") == 2, "la fermeture du clavier ne doit pas changer la page Settings"
+
 QTest.keyClick(window, Qt.Key_Escape)
 assert navigation.property("page") == 0, "Échap doit toujours ramener à Home, y compris depuis Settings"
 
@@ -112,7 +156,7 @@ print("PASS: deux scènes QML, navigation Home/Library/Settings et demande de la
 # shell/main.cpp, `Backend` est déclaré avant `QQmlApplicationEngine`, donc
 # le C++ détruit toujours le moteur QML avant le backend (ordre inverse de
 # construction). On reproduit ce même ordre ici, explicitement.
-del window, navigation, quick_menu
+del window, navigation, quick_menu, virtual_keyboard
 del engine
 del hello
 del backend

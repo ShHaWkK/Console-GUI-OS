@@ -83,3 +83,17 @@ Date:
 
 Status:
 Accepted (implémenté dans shell/Main.qml, vérifié par tests/qml_smoke.py)
+
+## ADR-007
+
+Decision:
+Game Detail minimal : en Bibliothèque, le premier Entrée sur un jeu ouvre un état de confirmation (`showDetail`) au lieu de lancer immédiatement ; un second Entrée confirme le lancement. Sur Home, Entrée lance toujours directement, sans étape intermédiaire. Back (Échap) est à deux niveaux depuis cet état : un premier Échap ferme la confirmation sans quitter la Bibliothèque, un second ramène à Home.
+
+Reason:
+CLAUDE.md section 26 place un écran « Game Detail » entre Library et Hello Console dans l'ordre d'implémentation recommandé. Aucune maquette dédiée ne porte ce nom (voir docs/ui-navigation.md section 4), mais `library 1-5 menu.png` montre un menu contextuel avant action sur une jaquette — c'est ce comportement qui est repris ici, sous la forme la plus honnête possible : pas de menu avec des actions fictives (pas d'« Ajouter aux favoris » qui ne ferait rien), seulement une confirmation avant le seul vrai effet de bord disponible (lancer le jeu). Home garde un lancement direct : cohérent avec le hint « A Start » visible dans la maquette home 1.jpg, qui ne montre pas d'étape intermédiaire pour reprendre une partie depuis l'accueil.
+
+Date:
+2026-09-17
+
+Status:
+Accepted (implémenté dans shell/Main.qml, vérifié par tests/qml_smoke.py et capture d'écran hors-écran)

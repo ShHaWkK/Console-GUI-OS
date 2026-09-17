@@ -12,6 +12,7 @@ Window {
     onVisibleChanged: if (visible) { requestActivate(); navigation.forceActiveFocus() }
 
     property bool quickMenuOpen: false
+    property bool keyboardOpen: false
 
     Theme { id: theme }
 
@@ -23,6 +24,13 @@ Window {
         property int page: 0
         property bool inContent: false
         property int selected: 0
+        // Game Detail minimal (CLAUDE.md section 26, docs/ui-navigation.md
+        // section 4) : en Bibliothèque, Entrée ouvre d'abord un état de
+        // confirmation avant de lancer réellement le jeu, comme le menu
+        // contextuel des maquettes (library 1-5 menu.png). Sur Home, Entrée
+        // lance directement — cohérent avec le hint "A Start" des maquettes
+        // Home (home 1.jpg). Non utilisé sur Settings (page 2).
+        property bool showDetail: false
         property var currentGame: backend.games.length > selected ? backend.games[selected] : null
 
         // Contenu Settings honnête : pas de réglage qui prétend fonctionner
@@ -33,25 +41,39 @@ Window {
             { name: "General", detail: "Aucun réglage d'affichage n'est encore configurable depuis ce prototype.\nThèmes et contrôle parental : non implémentés." },
             { name: "Account", detail: "Aucun compte utilisateur n'est configuré.\nGestion des profils : non implémentée (voir roadmap, Phase 2 et au-delà)." },
             { name: "System", detail: backend.systemInfo + "\nRéseau, audio et vidéo : non implémentés." },
-            { name: "Devices", detail: "Aucune manette détectée : le backend d'entrée manette physique n'est pas encore branché.\nSouris et clavier : gérés par le système d'exploitation, pas par cette application." },
+            { name: "Devices", detail: "Aucune manette détectée : le backend d'entrée manette physique n'est pas encore branché.\nSouris et clavier physiques : gérés par le système d'exploitation.\n\nClavier virtuel (réel, testez-le) : \"" + virtualKeyboard.text + "\"\nEntrée pour ouvrir le clavier virtuel." },
             { name: "Preferences", detail: "Notifications, capture et partage : non implémentés." }
         ]
 
         // Point d'entrée commun : le futur backend SDL appellera ces mêmes actions.
         function dispatch(action) {
             if (action === "menu") { window.quickMenuOpen = true }
-            else if (action === "back") { page = 0; inContent = false; selected = 0 }
+            else if (action === "back") {
+                if (showDetail) showDetail = false
+                else { page = 0; inContent = false; selected = 0 }
+            }
             else if (action === "refresh") backend.refresh()
-            else if (action === "up") inContent = false
-            else if (action === "down" || action === "tab") inContent = !inContent
+            else if (action === "up") { inContent = false; showDetail = false }
+            else if (action === "down" || action === "tab") {
+                inContent = !inContent
+                if (!inContent) showDetail = false
+            }
             else if (action === "left" || action === "right") {
                 let delta = action === "left" ? -1 : 1
                 if (!inContent) { page = (page + delta + 3) % 3; selected = 0 }
-                else if (page < 2 && backend.games.length) selected = (selected + delta + backend.games.length) % backend.games.length
+                else if (page < 2 && !showDetail && backend.games.length) selected = (selected + delta + backend.games.length) % backend.games.length
                 else if (page === 2) selected = (selected + delta + settingsCategories.length) % settingsCategories.length
             } else if (action === "accept") {
                 if (!inContent) inContent = true
-                else if (page < 2 && currentGame) backend.launch(currentGame.id)
+                else if (page === 0 && currentGame) backend.launch(currentGame.id)
+                else if (page === 1 && currentGame) {
+                    if (showDetail) backend.launch(currentGame.id)
+                    else showDetail = true
+                }
+                // Devices (index 3) : Entrée ouvre le clavier virtuel réel,
+                // seule action câblée sur Settings pour l'instant (les autres
+                // catégories n'ont rien de réel à faire à part naviguer).
+                else if (page === 2 && selected === 3) window.keyboardOpen = true
             }
         }
         Keys.onPressed: function(event) {
@@ -170,7 +192,9 @@ Window {
                     anchors.fill: parent; anchors.margins: theme.spacingXl; spacing: theme.spacingCardContent
                     Behavior on opacity { NumberAnimation { duration: theme.motionFast } }
                     Text {
-                        text: navigation.page === 2 ? "RÉGLAGES  /  " + (navigation.selected + 1).toString().padStart(2, "0") : "NATIVE  /  " + (navigation.selected + 1).toString().padStart(2, "0")
+                        text: navigation.page === 2 ? "RÉGLAGES  /  " + (navigation.selected + 1).toString().padStart(2, "0")
+                            : (navigation.page === 1 && navigation.showDetail) ? "CONFIRMER  /  " + (navigation.selected + 1).toString().padStart(2, "0")
+                            : "NATIVE  /  " + (navigation.selected + 1).toString().padStart(2, "0")
                         color: theme.colorAccent; font.pixelSize: theme.typeBadge; font.letterSpacing: 3
                     }
                     Text {
@@ -185,7 +209,10 @@ Window {
                     }
                     Text {
                         width: parent.width; wrapMode: Text.Wrap
-                        text: navigation.page === 2 ? navigation.settingsCategories[navigation.selected].detail : "←  →  Parcourir      Entrée  Jouer"
+                        text: navigation.page === 2 ? navigation.settingsCategories[navigation.selected].detail
+                            : (navigation.page === 1 && navigation.showDetail) ? "Entrée  Lancer      Échap  Retour à la bibliothèque"
+                            : navigation.page === 1 ? "←  →  Parcourir      Entrée  Voir / lancer"
+                            : "←  →  Parcourir      Entrée  Jouer"
                         color: theme.colorTextBody; font.pixelSize: theme.typeBody
                     }
                 }
@@ -211,5 +238,13 @@ Window {
         active: window.quickMenuOpen
         onClosed: { window.quickMenuOpen = false; navigation.forceActiveFocus() }
         onNavigateTo: function(page) { navigation.page = page; navigation.inContent = false; navigation.selected = 0 }
+    }
+
+    VirtualKeyboard {
+        id: virtualKeyboard
+        objectName: "virtualKeyboard"
+        theme: theme
+        active: window.keyboardOpen
+        onClosed: { window.keyboardOpen = false; navigation.forceActiveFocus() }
     }
 }
